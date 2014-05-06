@@ -338,6 +338,7 @@ HPAD:
 		SpawnOffset: 0,-256,0
 	Production:
 		Produces: Aircraft
+		SpawnAtMapEdge: True
 	Reservable:
 	RepairsUnits:
 	RallyPoint:

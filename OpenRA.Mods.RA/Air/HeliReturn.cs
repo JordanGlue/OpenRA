@@ -57,7 +57,8 @@ namespace OpenRA.Mods.RA.Air
 				new HeliFly(self, Target.FromPos(dest.CenterPosition + offset)),
 				new Turn(initialFacing),
 				new HeliLand(false),
-				new ResupplyAircraft());
+				new Rearm(self),
+				NextActivity);
 		}
 	}
 }

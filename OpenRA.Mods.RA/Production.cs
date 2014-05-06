@@ -13,6 +13,7 @@ using System.Linq;
 using OpenRA.Mods.RA.Move;
 using OpenRA.Primitives;
 using OpenRA.Traits;
+using OpenRA.Mods.RA.Air;
 
 namespace OpenRA.Mods.RA
 {
@@ -21,6 +22,7 @@ namespace OpenRA.Mods.RA
 	{
 		[Desc("e.g. Infantry, Vehicles, Aircraft, Buildings")]
 		public readonly string[] Produces = { };
+		public readonly bool SpawnAtMapEdge = false;
 
 		public virtual object Create(ActorInitializer init) { return new Production(this); }
 	}
@@ -77,6 +79,40 @@ namespace OpenRA.Mods.RA
 			});
 		}
 
+		[Desc("DoProduction Overload that takes a CPos to spawn at, instead of an exitinfo - used in classic spawning of helis.")]
+		public void DoProduction(Actor self, ActorInfo producee, CPos exitinfo)
+		{
+
+			var initialFacing = producee.Traits.Get<IFacingInfo>().GetInitialFacing();
+			var facing = Util.GetFacing(self.CenterPosition - exitinfo.CenterPosition, initialFacing);
+			WRange cruiseAltitude = WRange.Zero;
+			if (producee.Traits.Contains<AircraftInfo>() == true)
+			{
+				cruiseAltitude = producee.Traits.Get<AircraftInfo>().CruiseAltitude;
+			}
+
+			self.World.AddFrameEndTask(w =>
+			{
+				var newUnit = self.World.CreateActor(producee.Name, new TypeDictionary
+				{
+					new OwnerInit(self.Owner),
+					new LocationInit(exitinfo),
+					new CenterPositionInit(new WPos(exitinfo.CenterPosition.X, exitinfo.CenterPosition.Y, cruiseAltitude.Range)),
+					new FacingInit(facing)
+				});
+
+				var move = newUnit.Trait<IMove>();
+				var exit = self.Location + self.Info.Traits.WithInterface<ExitInfo>().Shuffle(self.World.SharedRandom)
+					.FirstOrDefault(e => CanUseExit(self, producee, e)).ExitCell;
+
+				var target = MoveToRallyPoint(self, newUnit, exit);
+				newUnit.SetTargetLine(Target.FromCell(target), Color.Green, false);
+
+				foreach (var t in self.TraitsImplementing<INotifyProduction>())
+					t.UnitProduced(self, newUnit, exit);
+			});
+		}
+
 		static CPos MoveToRallyPoint(Actor self, Actor newUnit, CPos exitLocation)
 		{
 			var rp = self.TraitOrDefault<RallyPoint>();
@@ -105,6 +141,10 @@ namespace OpenRA.Mods.RA
 
 			if (exit != null)
 			{
+				if ( self.Trait<Production>().Info.SpawnAtMapEdge == true ) {
+					DoProduction(self, producee, WorldUtils.NearestMapEdge(self.World, self.Location));
+					return true;
+				}
 				DoProduction(self, producee, exit);
 				return true;
 			}

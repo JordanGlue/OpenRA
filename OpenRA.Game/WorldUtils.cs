@@ -134,6 +134,73 @@ namespace OpenRA
 			return new WRange(Math.Min(x, y) * dir.Length);
 		}
 
+		public static CPos NearestMapEdge(this World w, CPos pos)
+		{
+			var maxX = w.Map.Bounds.BottomRightAsCPos().X;
+			var minX = w.Map.Bounds.TopLeftAsCPos().X;
+			var maxY = w.Map.Bounds.BottomRightAsCPos().Y;
+			var minY = w.Map.Bounds.TopLeftAsCPos().Y;
+
+			int newX = pos.X <= (maxX+minX)/2 ?
+				(pos.Y <= (maxY + minY) / 2 ? (pos.X == Math.Min(pos.X, pos.Y) ? minX : pos.X) : 
+				( ( pos.X + pos.Y ) <= maxY ? minX : pos.X ) ) :
+				(pos.Y <= (maxY + minY) / 2 ? ((pos.X + pos.Y) <= maxX ? pos.X : maxX) : 
+				(pos.X == Math.Max(pos.X, pos.Y) ? maxX : pos.X ) ) ;
+
+			int newY = pos.X <= (maxX + minX)/2 ?
+				(pos.Y <= (maxY + minY) / 2 ? (pos.X == Math.Min(pos.X, pos.Y) ? pos.Y : minY) : 
+				( ( pos.X + pos.Y ) <= maxY ? pos.Y : maxY ) ) :
+				(pos.Y <= (maxY + minY) / 2 ? ((pos.X + pos.Y) <= maxX ? minY : pos.Y) : 
+				(pos.X == Math.Max(pos.X, pos.Y) ? pos.Y : maxY ) ) ;
+			//Less compact version for easy of reading. Which version should be used?
+			//if (pos.X <= (maxX+minX)/2) {
+			//	if (pos.Y <= (maxY+minY)/2) {
+			//		if (pos.X == Math.Min(pos.X, pos.Y)) {
+			//			newX = minX;
+			//			newY = pos.Y;
+			//		}
+			//		else {
+			//			newX = pos.X;
+			//			newY = minY;
+			//		}
+			//	}
+			//	else {
+			//		if ((pos.X + pos.Y) <= maxY) {
+			//			newX = minX;
+			//			newY = pos.Y;
+			//		}
+			//		else {
+			//			newX = pos.X;
+			//			newY = maxY;
+			//		}
+			//	}
+			//}
+			//else {
+			//	if (pos.Y <= (maxY+minY)/2) {
+			//		if ((pos.X + pos.Y) <= maxX) {
+			//			newY = minY;
+			//			newX = pos.X;
+			//		} 
+			//		else {
+			//			newY = pos.Y;
+			//			newX = maxX;
+			//		}
+			//	}
+			//	else {
+			//		if (pos.X == Math.Max(pos.X, pos.Y)) {
+			//			newX = maxX;
+			//			newY = pos.Y;
+			//		}
+			//		else {
+			//			newX = pos.X;
+			//			newY = maxY;
+			//		}
+			//	}
+			//}
+
+			return new CPos(newX,newY);
+		}
+
 		public static bool HasVoices(this Actor a)
 		{
 			var selectable = a.Info.Traits.GetOrDefault<SelectableInfo>();
