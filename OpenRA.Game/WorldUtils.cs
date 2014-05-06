@@ -134,6 +134,43 @@ namespace OpenRA
 			return new WRange(Math.Min(x, y) * dir.Length);
 		}
 
+		public static CPos NearestMapEdge(this World w, CPos pos)
+		{
+			var maxX = w.Map.Bounds.BottomRightAsCPos().X;
+			var minX = w.Map.Bounds.TopLeftAsCPos().X;
+			var maxY = w.Map.Bounds.BottomRightAsCPos().Y;
+			var minY = w.Map.Bounds.TopLeftAsCPos().Y;
+
+			int newX = pos.X <= (maxX+minX)/2 ?
+				(pos.Y <= (maxY + minY) / 2 ? (pos.X == Math.Min(pos.X, pos.Y) ? minX : pos.X) : 
+				( ( pos.X + pos.Y ) <= maxY ? minX : pos.X ) ) :
+				(pos.Y <= (maxY + minY) / 2 ? ((pos.X + pos.Y) <= maxX ? pos.X : maxX) : 
+				(pos.X == Math.Max(pos.X, pos.Y) ? maxX : pos.X ) ) ;
+
+			int newY = pos.X <= (maxX + minX)/2 ?
+				(pos.Y <= (maxY + minY) / 2 ? (pos.X == Math.Min(pos.X, pos.Y) ? pos.Y : minY) : 
+				( ( pos.X + pos.Y ) <= maxY ? pos.Y : maxY ) ) :
+				(pos.Y <= (maxY + minY) / 2 ? ((pos.X + pos.Y) <= maxX ? minY : pos.Y) : 
+				(pos.X == Math.Max(pos.X, pos.Y) ? pos.Y : maxY ) ) ;
+
+			return new CPos(newX,newY);
+		}
+
+		public static CPos StepTowards(CPos start, CPos end)
+		{
+			var newX = -(start.X - end.X);
+			var newY = -(start.Y - end.Y);
+
+			newX = newX > 0 ? 1 : 0;
+			newX = newX < 0 ? -1 : 0;
+			newY = newY > 0 ? 1 : 0;
+			newY = newY < 0 ? -1 : 0;
+
+			var result = new CPos(start.X + newX, start.Y + newY);
+
+			return result;
+		}
+
 		public static bool HasVoices(this Actor a)
 		{
 			var selectable = a.Info.Traits.GetOrDefault<SelectableInfo>();
